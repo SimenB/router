@@ -101,14 +101,23 @@ let createHistory = (source, options) => {
 ////////////////////////////////////////////////////////////////////////////////
 // Stores history entries in memory for testing or other platforms like Native
 let createMemorySource = (initialPath = "/") => {
-  let searchIndex = initialPath.indexOf("?");
-  let initialLocation = {
-    pathname:
-      searchIndex > -1 ? initialPath.substr(0, searchIndex) : initialPath,
-    search: searchIndex > -1 ? initialPath.substr(searchIndex) : ""
-  };
+  function createMemoryLocationFromPathname(path) {
+    let initialLocationUrl = new URL(path, "https://folio.no");
+    return {
+      hash: initialLocationUrl.hash,
+      host: initialLocationUrl.host,
+      hostname: initialLocationUrl.hostname,
+      href: initialLocationUrl.href,
+      origin: initialLocationUrl.origin,
+      pathname: initialLocationUrl.pathname,
+      port: initialLocationUrl.port,
+      protocol: initialLocationUrl.protocol,
+      search: initialLocationUrl.search
+    };
+  }
+
   let index = 0;
-  let stack = [initialLocation];
+  let stack = [createMemoryLocationFromPathname(initialPath)];
   let states = [null];
 
   return {
@@ -128,14 +137,12 @@ let createMemorySource = (initialPath = "/") => {
         return states[index];
       },
       pushState(state, _, uri) {
-        let [pathname, search = ""] = uri.split("?");
         index++;
-        stack.push({ pathname, search: search.length ? `?${search}` : search });
+        stack.push(createMemoryLocationFromPathname(uri));
         states.push(state);
       },
       replaceState(state, _, uri) {
-        let [pathname, search = ""] = uri.split("?");
-        stack[index] = { pathname, search };
+        stack[index] = createMemoryLocationFromPathname(uri);
         states[index] = state;
       },
       go(to) {
